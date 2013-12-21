@@ -1,6 +1,11 @@
+======================================================================
+======================================================================
 Finding PI using Monte Carlo Method Distributed Using MPI
+======================================================================
+
 090185B Hettiarachchi H.A.C.
-CS4552 Scientific Computing Assignment 1 Part B (ii) 
+CS4552 Scientific Computing Project
+======================================================================
 
 
 Take a uniformly distributed random point within the square with width and height of 1.   
@@ -13,30 +18,30 @@ P(random point within circle) = ------------------  = --------------  = Pi/4
 Pi = 4 * (No. of tries within circle) / (Total no. of Tries)
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-							First attempt: mpi_findpi
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+			First attempt: mpi_findpi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Load Balance			: Equally Distributed
 Termination condition	: Square of error between two iterations is less than 0.001 
 Communication Pattern	: MPI_REDUCE
 Random Number Generator : Uniform RANF (See comments in code)
 Notes					: 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-							Second attempt: pi_parallel_lb
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+			Second attempt: pi_parallel_lb
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Load Balance			: Equal timeouts for each process
 Termination condition	: One cycle of processing 
 Communication Pattern	: MPI_SEND and MPI_RECEIVE
 Random Number Generator : Uniform RANF (See comments in code)
 Notes					:
-							Each process is given two seconds to process. When that interval  is finished, total and 
-							success counts are returned to the main process in order. PI is calculated there.
-							Might overflow integers, as the limit is just bounded by time, not from the count. But 
-							but here, time is hard coded for favourable number. 
+	Each process is given two seconds to process. When that interval  is finished, total and 
+	success counts are returned to the main process in order. PI is calculated there.
+	Might overflow integers, as the limit is just bounded by time, not from the count. But 
+	but here, time is hard coded for favourable number. 
 
-							This assumed each process will handle LOCAL_TOTAL number of operations in similat time period
-							So load is equally distributed.
+	This assumed each process will handle LOCAL_TOTAL number of operations in similat time period
+	So load is equally distributed.
 
 
 
@@ -73,4 +78,4 @@ mpiexec -launcher ssh -f hostfile -n 4 bin/pi_parallel_lb
 
 Both hosts should have the executable and you migh need to change the paths to full paths.
 
- 
+ (You will be asked for ssh authentication after executing this)
