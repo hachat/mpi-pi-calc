@@ -44,6 +44,16 @@ Notes					:
 	So load is equally distributed.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+			Third attempt: mpi_pi_calc
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Load Balance			: Feedback based load balancer
+Termination condition	: Convergence by error maintained within 1e-10
+							(difference between two iterations continuously for four times) 
+Communication Pattern	: MPI_SEND and MPI_RECEIVE
+Random Number Generator : Uniform RANF (See comments in code)
+Notes					:
+
 
 Build the PI Calculation program 
 ================================
