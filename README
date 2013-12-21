@@ -1,0 +1,76 @@
+Finding PI using Monte Carlo Method Distributed Using MPI
+090185B Hettiarachchi H.A.C.
+CS4552 Scientific Computing Assignment 1 Part B (ii) 
+
+
+Take a uniformly distributed random point within the square with width and height of 1.   
+Consider the circle encapsulated within the square with radius 0.5
+
+                                  Area of Circle        Pi * R * R
+P(random point within circle) = ------------------  = --------------  = Pi/4
+                                Area of the Square       4 * R * R
+
+Pi = 4 * (No. of tries within circle) / (Total no. of Tries)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+							First attempt: mpi_findpi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Load Balance			: Equally Distributed
+Termination condition	: Square of error between two iterations is less than 0.001 
+Communication Pattern	: MPI_REDUCE
+Random Number Generator : Uniform RANF (See comments in code)
+Notes					: 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+							Second attempt: pi_parallel_lb
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Load Balance			: Equal timeouts for each process
+Termination condition	: One cycle of processing 
+Communication Pattern	: MPI_SEND and MPI_RECEIVE
+Random Number Generator : Uniform RANF (See comments in code)
+Notes					:
+							Each process is given two seconds to process. When that interval  is finished, total and 
+							success counts are returned to the main process in order. PI is calculated there.
+							Might overflow integers, as the limit is just bounded by time, not from the count. But 
+							but here, time is hard coded for favourable number. 
+
+							This assumed each process will handle LOCAL_TOTAL number of operations in similat time period
+							So load is equally distributed.
+
+
+
+Build the PI Calculation program 
+================================
+
+Dependencies: 1. gfortran
+              2. Install mpich. Follow the readme. http://www.mpich.org/static/downloads/3.0.4/mpich-3.0.4.tar.gz
+
+
+Make the given target i.e: for pi_parallel_lb execute
+		
+				make pi_parallel_lb
+
+Running
+========
+
+In a single machine, with 4 processes:
+
+mpiexec -n 4 bin/pi_parallel_lb
+
+
+In multiple machines (which has visible IP addresses for each of the machines):
+
+Create a file named hostfile containing hosts ips and expected processes at ones for each host.
+
+e.g.(which tells to run on two hosts given, with two processes at ones per each host): 
+
+192.168.1.1:2
+192.168.1.2:2
+
+
+mpiexec -launcher ssh -f hostfile -n 4 bin/pi_parallel_lb
+
+Both hosts should have the executable and you migh need to change the paths to full paths.
+
+ 
