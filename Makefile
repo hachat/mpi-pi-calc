@@ -2,8 +2,11 @@
 default:
 	mkdir -p bin
 
-all: default pi_parallel_lb mpi_findpi
+all: default load_balancer pi_parallel_lb mpi_findpi
 	
+load_balancer: default
+	mpif77 -o bin/load_balancer source/load_balancer.f
+
 pi_parallel_lb: default
 	mpif77 -o bin/pi_parallel_lb source/pi_parallel_lb.f
 
