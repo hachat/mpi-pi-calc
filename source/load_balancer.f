@@ -1,6 +1,6 @@
 	  PROGRAM LOAD_BALANCER
 	    INCLUDE 'mpif.h'
-	    INTEGER*4 MAX_PROC_COUNT
+	    INTEGER*4 MAX_PROC_COUNT,I
 	  	DOUBLE PRECISION START_TIME,END_TIME
 		INTEGER*4 NUMTASKS,RANK,LEN,IERR,TASK
 
@@ -11,19 +11,24 @@
         INTEGER*4 REQUEST_SEND(10)
         INTEGER*4 REQUEST_RECV(10)
 
+        INTEGER*4 STATUS_SEND_RES(MPI_STATUS_SIZE)
+        INTEGER*4 STATUS_RECV_RES(MPI_STATUS_SIZE)
+        INTEGER*4 REQUEST_SEND_RES(10)
+        INTEGER*4 REQUEST_RECV_RES(10)
+
         MAX_PROC_COUNT = 10
 
 
-		ASSIGNED_CHUNK(1) = 100
-		ASSIGNED_CHUNK(2) = 200
-		ASSIGNED_CHUNK(3) = 300
-		ASSIGNED_CHUNK(4) = 400
-		ASSIGNED_CHUNK(5) = 500
-		ASSIGNED_CHUNK(6) = 600
-		ASSIGNED_CHUNK(7) = 800
-		ASSIGNED_CHUNK(8) = 800
-		ASSIGNED_CHUNK(9) = 900
-		ASSIGNED_CHUNK(10) = 1000
+		ASSIGNED_CHUNK(1) = 1
+		ASSIGNED_CHUNK(2) = 2
+		ASSIGNED_CHUNK(3) = 3
+		ASSIGNED_CHUNK(4) = 4
+		ASSIGNED_CHUNK(5) = 5
+		ASSIGNED_CHUNK(6) = 6
+		ASSIGNED_CHUNK(7) = 8
+		ASSIGNED_CHUNK(8) = 8
+		ASSIGNED_CHUNK(9) = 9
+		ASSIGNED_CHUNK(10) = 10
 
 	  	CALL MPI_INIT (IERR)
 		IF (IERR .NE. MPI_SUCCESS) THEN
@@ -63,17 +68,19 @@ C     ===============MASTER CODE============================
 		  END IF
      	END DO
 
-     	DO TASK = 1, NUMTASKS-1
-		
-     	 PRINT *, 'Waiting to clear send buf ',TASK
-	     CALL MPI_WAIT(REQUEST_SEND(TASK),STATUS_SEND,IERR)
+
+     	DO I = 1, NUMTASKS-1
+     	 PRINT *, 'Waiting to clear another send buf..'
+		 CALL MPI_WAITANY(NUMTASKS-1,REQUEST_SEND,TASK,STATUS_SEND,IERR)
 	     IF (IERR .NE. MPI_SUCCESS) THEN
     		PRINT *,'ERROR IN WAIT FOR SEND. TERMINATING.'
       		CALL MPI_ABORT(MPI_COMM_WORLD, 1, IERR)
 		 END IF
 	     PRINT *, 'Cleared send buf ',TASK
-	    
+	     
      	END DO
+C     ======================================================
+C     ===============CLIENT CODE============================
 	  ELSE
 
 	    PRINT *, 'NUMBER OF TASKS=',NUMTASKS,' MY RANK=',RANK
@@ -93,6 +100,10 @@ C     ===============MASTER CODE============================
       		CALL MPI_ABORT(MPI_COMM_WORLD, 1, IERR)
 		END IF
 	  	PRINT *,'TASK=',RANK,' CHUNK=',CHUNK(RANK)
+	  	
+c       process the chunk here
+	  	CALL SLEEP(CHUNK(RANK))
+
 	  ENDIF
 
 
