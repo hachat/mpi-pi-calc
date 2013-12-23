@@ -1,7 +1,10 @@
 	  PROGRAM LOAD_BALANCER
 	    INCLUDE 'mpif.h'
 	    INTEGER*4 MAX_PROC_COUNT,I
-	  	DOUBLE PRECISION START_TIME,END_TIME
+	  	DOUBLE PRECISION START_TIME(10)
+	  	DOUBLE PRECISION END_TIME(10)
+	  	DOUBLE PRECISION ELAPSED_TIME(10)
+	  	
 		INTEGER*4 NUMTASKS,RANK,LEN,IERR,TASK
 
         
@@ -14,7 +17,9 @@
         INTEGER*4 REQUEST_SEND_RES(10)
         INTEGER*4 REQUEST_RECV_RES(10)
 
+
         INTEGER*4 RESULT(10)
+        INTEGER*4 ITERATION(10)
 
 c       keep idea about what to do with a given node
 c       either send another request or waiting till a response comes
@@ -23,20 +28,29 @@ c       either send another request or waiting till a response comes
 		INTEGER*4 PENDING_SENDS
 		INTEGER*4 PENDING_RECVS;
         
+
+        START_TIME(1) = MPI_WTIME()
+        CALL SLEEP(2)
+        END_TIME(1) = MPI_WTIME()
+        ELAPSED_TIME(1) = END_TIME(1) - START_TIME(1)
+	    PRINT *,' ELAPSED TIME:', ELAPSED_TIME(1)
+        PRINT *,'START TIME:', START_TIME(1), ' END TIME:', END_TIME(1)
+
+
         MAX_PROC_COUNT = 10
         PENDING_SENDS = 0;
         PENDING_RECVS = 0;
 
-		ASSIGNED_CHUNK(1) = 9
-		ASSIGNED_CHUNK(2) = 8
-		ASSIGNED_CHUNK(3) = 7
-		ASSIGNED_CHUNK(4) = 6
-		ASSIGNED_CHUNK(5) = 5
-		ASSIGNED_CHUNK(6) = 4
-		ASSIGNED_CHUNK(7) = 3
+		ASSIGNED_CHUNK(1) = 1
+		ASSIGNED_CHUNK(2) = 2
+		ASSIGNED_CHUNK(3) = 1
+		ASSIGNED_CHUNK(4) = 2
+		ASSIGNED_CHUNK(5) = 1
+		ASSIGNED_CHUNK(6) = 2
+		ASSIGNED_CHUNK(7) = 1
 		ASSIGNED_CHUNK(8) = 2
 		ASSIGNED_CHUNK(9) = 1
-		ASSIGNED_CHUNK(10) = 0
+		ASSIGNED_CHUNK(10) = 2
 
 		DO I = 1,10
 			NODE_STATUS(I) = 0
@@ -44,6 +58,10 @@ c       either send another request or waiting till a response comes
 			REQUEST_SEND(I) = MPI_REQUEST_NULL
 			REQUEST_RECV(I) = MPI_REQUEST_NULL
 		    REQUEST_SEND_RES(I) = MPI_REQUEST_NULL
+
+		    START_TIME(I) = START_TIME(1)
+		    END_TIME(I) = START_TIME(1)
+		    ELAPSED_TIME(I) = START_TIME(1)
 		END DO
 
 
@@ -71,15 +89,12 @@ C     ======================================================
 C     ===============MASTER CODE============================
       IF(RANK .EQ. 0) THEN
 
-      	START_TIME = MPI_WTIME()
-
-		END_TIME = MPI_WTIME()
-		PRINT *, 'START TIME:', START_TIME
-		
-		
 c       initial processing request for each process
 
 		DO TASK = 1, NUMTASKS-1
+		   ITERATION(TASK) = 1
+		   START_TIME(TASK) = MPI_WTIME()
+		   PRINT *,'TASK:',TASK,' START TIME:', START_TIME(TASK)
 		  CALL MPI_ISEND(ASSIGNED_CHUNK(TASK), 1, MPI_INTEGER, TASK, 
      &     0, MPI_COMM_WORLD,
      &     REQUEST_SEND(TASK), IERR)
@@ -87,7 +102,8 @@ c       initial processing request for each process
     		PRINT *,'ERROR IN ISEND. TERMINATING.'
       		CALL MPI_ABORT(MPI_COMM_WORLD, 1, IERR)
 		  END IF
-		  PENDING_SENDS = PENDING_SENDS +1
+		  PENDING_SENDS = PENDING_SENDS + 1
+		  PRINT *,'2TASK:',TASK,' START TIME:', START_TIME(TASK)
      	END DO
 
      	PRINT *, 'Pending Sends ',PENDING_SENDS
@@ -95,8 +111,6 @@ c       initial processing request for each process
 		 
 		DO WHILE (.TRUE.)
 
-c       test if last requests sent completely, and switch to
-c       receiving mode
 
 		  IF(PENDING_SENDS .GT. 0) THEN
 
@@ -115,7 +129,8 @@ c           Undefined Task MPI_UNDEFINED -32766
 		     IF(SEND_TEST_FLAG) THEN
 		      REQUEST_SEND(TASK) = MPI_REQUEST_NULL
 		      PRINT *, 'Cleared send buf ',TASK
-c             switching node status to receiving mode
+c       test if last requests sent completely, and switch to
+c       receiving mode
 		 	  NODE_STATUS(TASK) = 1
 		 	  PENDING_SENDS = PENDING_SENDS - 1
 
@@ -157,10 +172,29 @@ c           Undefined Task MPI_UNDEFINED -32766
 		     IF(RECV_TEST_FLAG) THEN
 		      REQUEST_RECV_RES(TASK) = MPI_REQUEST_NULL
 		      
+		      ITERATION(TASK) = ITERATION(TASK) + 1
 		      PENDING_RECVS = PENDING_RECVS - 1
+		      END_TIME(TASK) = MPI_WTIME()
+
+			  PRINT *,'TASK:',TASK,'START TIME:', START_TIME(TASK), 
+     &            ' END TIME:', END_TIME(TASK)
+              ELAPSED_TIME(TASK) = END_TIME(TASK) 
+     &          - START_TIME(TASK)
+		      PRINT *, 'TASK: ',TASK,' ELAPSED TIME:',
+     &             ELAPSED_TIME(TASK)
+             
 c             asses next chunk here..!!!
-		      ASSIGNED_CHUNK(TASK) = -1
+
+				IF(ITERATION(TASK) .EQ. 5) THEN
+		          ASSIGNED_CHUNK(TASK) = -1
+		        ELSE
+		        	ASSIGNED_CHUNK(TASK) = 1
+		        END IF
+c              START_TIME(TASK) = MPI_WTIME()
+              PRINT *,'TASK:',TASK,' START TIME:', START_TIME(TASK)
+
 		      PRINT *, "Assigned ", ASSIGNED_CHUNK(TASK),' to ',TASK
+
 
 			  CALL MPI_ISEND(ASSIGNED_CHUNK(TASK), 1, MPI_INTEGER, TASK,
      &           0, MPI_COMM_WORLD, REQUEST_SEND(TASK), IERR)
@@ -223,7 +257,7 @@ c       termination condition
 	  	END IF 
 
 c       process the chunk here
-	  	CALL SLEEP(CHUNK(RANK))
+c	  	CALL SLEEP(CHUNK(RANK))
 
 
 	    CALL MPI_ISEND(CHUNK(RANK), 1, MPI_INTEGER, 0, 
