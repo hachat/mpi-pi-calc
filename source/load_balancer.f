@@ -20,7 +20,8 @@ c       keep idea about what to do with a given node
 c       either send another request or waiting till a response comes
         INTEGER*1 NODE_STATUS(10)
         LOGICAL   SEND_TEST_FLAG,RECV_TEST_FLAG
-		INTEGER*4 PENDING_SENDS,PENDING_RECVS;
+		INTEGER*4 PENDING_SENDS
+		INTEGER*4 PENDING_RECVS;
         
         MAX_PROC_COUNT = 10
         PENDING_SENDS = 0;
@@ -115,7 +116,7 @@ c           Undefined Task MPI_UNDEFINED -32766
 		      PRINT *, 'Cleared send buf ',TASK
 c             switching node status to receiving mode
 		 	  NODE_STATUS(TASK) = 1
-		 	  PENDING_SENDS = PENDING_SENDS -1
+		 	  PENDING_SENDS = PENDING_SENDS - 1
 
 		 	  IF(ASSIGNED_CHUNK(TASK) .NE. -1) THEN
 		 	   RESULT(TASK) = 0
@@ -139,7 +140,7 @@ c             switching node status to receiving mode
 		  END IF
 
 		  IF(PENDING_RECVS .GT. 0) THEN
-		  	CALL MPI_TESTANY(NUMTASKS-1,REQUEST_RECV_RES,TASK,
+		   	CALL MPI_TESTANY(NUMTASKS-1,REQUEST_RECV_RES,TASK,
      &          RECV_TEST_FLAG,STATUS_RECV_RES,IERR)
 	        IF (IERR .NE. MPI_SUCCESS) THEN
     		  PRINT *,'ERROR IN WAIT FOR RECV RESPONSE. TERMINATING.'
@@ -155,7 +156,7 @@ c           Undefined Task MPI_UNDEFINED -32766
 		     IF(RECV_TEST_FLAG) THEN
 		      REQUEST_RECV_RES(TASK) = MPI_REQUEST_NULL
 		      
-		      PENDING_RECVS = PENDING_RECVS -1
+		      PENDING_RECVS = PENDING_RECVS - 1
 c             asses next chunk here..!!!
 		      ASSIGNED_CHUNK(TASK) = -1
 		      PRINT *, "Assigned ", ASSIGNED_CHUNK(TASK),' to ',TASK
@@ -166,8 +167,8 @@ c             asses next chunk here..!!!
     		    PRINT *,'ERROR IN ISEND. TERMINATING.'
       		    CALL MPI_ABORT(MPI_COMM_WORLD, 1, IERR)
 		      END IF
-		      PENDING_SENDS = PENDING_SENDS +1
-		     
+		      PENDING_SENDS = PENDING_SENDS + 1
+		      NODE_STATUS(TASK) = 0
 		     END IF
 		    ELSE
 		     PRINT *,'not in receiving mode'
@@ -176,11 +177,12 @@ c             asses next chunk here..!!!
 		     END DO
 		    
 		    END IF
+		    ELSE
+c		    	PRINT *, 'Got Undefined Task MPI_UNDEFINED'
 			END IF
 		    
 
 		  END IF
-
 		  IF(PENDING_RECVS .EQ. 0 .AND. PENDING_SENDS .EQ. 0) THEN
 		  	PRINT *, "Completed communications!"
 		  	EXIT;
@@ -191,6 +193,9 @@ C     ======================================================
 C     ===============CLIENT CODE============================
 	  ELSE
 
+	   IF(RANK .GE. MAX_PROC_COUNT) THEN
+
+	   ELSE
 	  PRINT *, 'NUMBER OF TASKS=',NUMTASKS,' MY RANK=',RANK
 	  DO WHILE (.TRUE.)
 	    CALL MPI_IRECV(CHUNK(RANK), 1, MPI_INTEGER, 0,
@@ -239,6 +244,9 @@ c		IF(STATUS_SEND_RES)  ???
 	  	PRINT *, 'Sent response buf to master',RANK
 	  	
 	  END DO
-	  ENDIF
+
+c      closing MAX_PROC_COUNT test
+       END IF	     
+	  END IF
 	  CALL MPI_FINALIZE(IERR)
 	  END
